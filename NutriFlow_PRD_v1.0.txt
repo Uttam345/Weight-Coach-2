@@ -1,0 +1,538 @@
+
+PRODUCT REQUIREMENTS DOCUMENT
+NutriFlow – AI-Powered Nutrition, Health & Kitchen Platform
+Version 1.0  ·  Final Year Project
+Development Workflow: Antigravity (AI Code Generation) + Human Review
+
+April 2026
+
+1. Executive Summary
+NutriFlow is a comprehensive personal wellness platform that unifies four distinct domains — nutrition tracking, health monitoring, gym workout management, and AI-assisted cooking — into a single, cohesive experience. The platform's defining USP is its AI Kitchen Cook module, which lets users track their kitchen inventory in real time and receive personalised meal suggestions, full recipes, and linked cooking videos, all generated or curated by AI.
+
+This document covers the complete requirements lifecycle: high-level feature descriptions, detailed user stories, acceptance criteria, prioritisation, and concrete implementation guidance tuned for the Antigravity code-generation workflow with human review gates at each milestone.
+
+Workflow Convention — Antigravity generates UI components, API integrations, and data models based on structured prompts. After each generation cycle the human reviewer (you) validates functional correctness, UX quality, and spec completeness before merging or iterating. Each implementation table in this document includes a dedicated Antigravity Prompt Hint column to guide generation, and a Human Review Focus column to guide validation.
+
+2. Platform Overview
+2.1 Vision Statement
+To be the most intelligent personal wellness companion — one that understands what you eat, how you move, and what you have in your kitchen, and uses that understanding to help you live better every day.
+2.2 Core Modules
+	•	Module 1 – Nutrition Tracker: Log daily meals, macronutrients, calories, water intake, and dietary goals with a rich food database.
+	•	Module 2 – Health Dashboard: Track vitals (weight, BMI, blood pressure, sleep, steps) and visualise trends over time.
+	•	Module 3 – Gym & Workout Flows: Plan, log, and review workouts with guided exercise flows, progressive overload tracking, and rest timers.
+	•	Module 4 – AI Chat Assistant: An always-available conversational AI to answer nutrition questions, workout advice, and general wellness queries.
+	•	Module 5 – AI Kitchen Cook (USP): Track kitchen inventory, receive AI-generated meal options using available ingredients, get full recipes with macros, and watch linked cooking videos.
+
+2.3 Target Users
+	•	Fitness enthusiasts who want integrated tracking across nutrition and workouts.
+	•	Home cooks looking to reduce food waste by cooking with what they already have.
+	•	Health-conscious individuals who want personalised, data-driven wellness insights.
+	•	Beginners who need guided flows and AI coaching to build healthy habits.
+
+3. Module 1 – Nutrition Tracker
+3.1 Feature Specifications
+The Nutrition Tracker is the foundation of daily engagement. It must handle meal logging with minimal friction, support barcode scanning for packaged foods, and surface clear macro/micro nutrient breakdowns.
+
+Feature
+User Story
+Acceptance Criteria
+Priority
+Meal Logging
+As a user I want to log breakfast, lunch, dinner, and snacks so I can see my full daily intake.
+Each meal entry saves food name, portion, calories, protein, carbs, and fat. Daily totals update in real time.
+P0 – Must
+Food Database Search
+As a user I want to search a large food database so I don't have to enter nutrition info manually.
+Search returns results in < 1s. Database covers ≥ 1M foods including Indian foods. User can confirm or edit values.
+P0 – Must
+Barcode Scanner
+As a user I want to scan a product barcode to auto-fill its nutrition data.
+Camera opens within 1 tap. Scanned barcode resolves food entry in < 2s. Falls back gracefully if unknown.
+P1 – High
+Custom Food / Recipe Builder
+As a user I want to save my own recipes so I can log them quickly in the future.
+User enters ingredients, portions, and serving size. System computes combined macros. Recipe saved to personal library.
+P1 – High
+Daily Goals & Progress Ring
+As a user I want to see a visual progress ring so I know how close I am to my calorie and macro targets.
+Ring updates after every log entry. Colour indicates under / on-track / over. Tapping ring shows breakdown.
+P0 – Must
+Macro & Micro Detail
+As a user I want to drill into vitamins and minerals so I can track micronutrient health.
+Detail view shows fibre, sodium, sugar, vitamins A/C/D, calcium, iron. Data sourced from USDA / Open Food Facts.
+P1 – High
+Water Intake Tracker
+As a user I want to log my water intake so I can meet my daily hydration goal.
+Quick-add buttons for 200ml / 500ml. Daily target configurable. Progress shown on dashboard.
+P1 – High
+Weekly & Monthly Reports
+As a user I want weekly summary reports so I can spot patterns in my eating habits.
+Report shows average daily calories, top-consumed foods, macro distribution chart, and streak count.
+P2 – Medium
+
+3.2 Implementation Guidance
+Component
+Tech / Approach
+Antigravity Prompt Hint
+Human Review Focus
+Food Search API
+Integrate Open Food Facts (free) + USDA FoodData Central. Cache results in local DB for offline.
+'Build a React search component with debounced input (300ms). On result select, populate a NutritionCard component showing macros. Use Open Food Facts REST API.'
+Verify Indian regional foods appear. Check that calories are per-serving not per-100g by default.
+Barcode Scanner
+Use react-native-camera or expo-barcode-scanner. Map EAN/UPC to Open Food Facts.
+'Implement a BarcodeScanner screen using expo-barcode-scanner. On scan success emit the barcode string and call the food lookup service.'
+Test on physical device. Confirm fallback UI when barcode not found.
+Daily Log Store
+Redux slice or Zustand store. Persist to SQLite (mobile) or IndexedDB (web). Sync to backend on connectivity.
+'Create a mealLogSlice in Redux Toolkit with actions: addEntry, removeEntry, updateEntry. Compute daily totals as selectors.'
+Confirm totals recalculate instantly on add/remove. Verify persistence across app restarts.
+Progress Ring
+SVG-based animated ring component. Use react-native-svg or CSS SVG.
+'Build a MacroRing SVG component accepting caloriesConsumed and caloriesGoal props. Animate stroke-dashoffset on mount.'
+Check colour transitions (green / amber / red). Ring must not overflow container on small screens.
+
+4. Module 2 – Health Dashboard
+4.1 Feature Specifications
+The Health Dashboard aggregates biometric and lifestyle data into an easy-to-read control centre. It connects to wearables where possible and lets users manually enter readings when device integration isn't available.
+
+Feature
+User Story
+Acceptance Criteria
+Priority
+Weight & BMI Logging
+As a user I want to log my weight daily so I can track my body composition trend.
+Entry accepts kg or lbs. BMI auto-calculated. Trend chart shows last 30 / 90 / 365 days.
+P0 – Must
+Vital Signs Tracker
+As a user I want to log blood pressure and resting heart rate so I can monitor cardiovascular health.
+Systolic / diastolic / pulse fields. Readings flagged if outside normal range with advisory copy.
+P1 – High
+Sleep Tracker
+As a user I want to log sleep hours and quality so I can correlate sleep with energy and performance.
+Log bedtime, wake time, and quality (1–5 stars). Weekly average shown on dashboard.
+P1 – High
+Step Counter Integration
+As a user I want my step count to sync from my phone / wearable so I don't have to enter it manually.
+Connects to Apple HealthKit / Google Fit. Falls back to phone pedometer. Daily step goal with progress bar.
+P1 – High
+Health Score (AI)
+As a user I want an AI-computed overall health score so I know my general wellness at a glance.
+Score (0–100) computed from sleep, steps, nutrition adherence, weight trend. Score explained in plain language.
+P2 – Medium
+Streak & Habit Tracking
+As a user I want to see my logging streaks so I stay motivated to build consistent habits.
+Streak increments when user logs at least one entry per day. Visual flame icon with count. Longest streak stored.
+P2 – Medium
+
+4.2 Implementation Guidance
+Component
+Tech / Approach
+Antigravity Prompt Hint
+Human Review Focus
+Biometric Storage
+Time-series table in Postgres (or SQLite mobile). Schema: user_id, metric_type, value, unit, timestamp.
+'Generate a Prisma schema for a HealthMetric model with fields: id, userId, metricType (enum), value, unit, recordedAt.'
+Ensure metric_type enum is extensible. Verify timestamps stored in UTC.
+Charts / Graphs
+Use Victory Native (mobile) or Recharts (web). Line charts for trends, bar charts for weekly.
+'Build a TrendChart component using Recharts LineChart. Accept data prop as {date, value}[]. Show last 30 days by default with a period selector.'
+Check chart renders on narrow screens. Verify x-axis labels don't overlap.
+HealthKit / Google Fit
+Use expo-health or react-native-health. Request permissions on first launch.
+'Integrate expo-health to read stepCount and sleepAnalysis. Fetch last 7 days on app foreground. Store in HealthMetric table.'
+Confirm permission prompt is clear. Test denial flow — app must not crash.
+AI Health Score
+Compute weighted average server-side (Python). Weights: nutrition 30%, sleep 25%, steps 25%, weight trend 20%.
+'Write a FastAPI endpoint POST /health-score that accepts a HealthData payload and returns a score (0–100) and a plain-language explanation string.'
+Validate explanation is non-judgmental. Confirm edge case where user has logged < 3 days of data.
+
+5. Module 3 – Gym & Workout Flows
+5.1 Feature Specifications
+The Gym module turns the platform into a personal trainer companion. Users can build custom workout plans, follow guided exercise flows, track progressive overload, and review performance history.
+
+Feature
+User Story
+Acceptance Criteria
+Priority
+Exercise Library
+As a user I want to browse exercises by muscle group so I can build workouts targeting specific areas.
+Library contains ≥ 300 exercises with name, muscle group tags, equipment needed, and animated GIF / illustration.
+P0 – Must
+Workout Plan Builder
+As a user I want to create and save custom workout plans so I can follow a structured routine.
+Drag-and-drop exercise ordering. Sets, reps, and rest period configurable per exercise. Plan saved to profile.
+P0 – Must
+Live Workout Logger
+As a user I want to log sets and reps in real time during a workout so I track every rep accurately.
+Quick +/– buttons for weight and reps. Checkbox to mark set complete. Elapsed workout timer visible.
+P0 – Must
+Rest Timer
+As a user I want an automatic rest timer so I know when to start the next set.
+Timer starts automatically after marking a set complete. Audible + haptic alert when timer ends. Duration editable.
+P1 – High
+Progressive Overload Tracking
+As a user I want to see my previous weights and reps for each exercise so I know when to increase load.
+Previous session values shown in grey next to input fields. Personal best highlighted. Volume trend chart.
+P1 – High
+Pre-Built Workout Templates
+As a user I want access to pre-built programs so I don't have to design my own routine from scratch.
+Library of at least 10 programs (Push/Pull/Legs, Full Body, etc.). Each has a description, difficulty, and duration.
+P1 – High
+AI Workout Recommendation
+As a user I want the AI to suggest today's workout based on my goals and recovery status.
+AI considers last workout, muscle groups trained, and stated goal (strength / hypertrophy / endurance). Surfaced on dashboard.
+P2 – Medium
+Workout History & Analytics
+As a user I want to review past workouts so I can see how my fitness is progressing.
+Calendar view of workout days. Tapping a date shows full workout log. Monthly volume chart per muscle group.
+P2 – Medium
+
+5.2 Implementation Guidance
+Component
+Tech / Approach
+Antigravity Prompt Hint
+Human Review Focus
+Exercise Library DB
+Seed from open dataset (Wger API or ExerciseDB). Store in Postgres. S3 / CDN for GIF assets.
+'Generate a seed script that fetches exercises from the Wger REST API and inserts them into an Exercise Prisma model with fields: name, muscleGroups, equipment, gifUrl.'
+Verify muscle group filter returns correct results. Check GIFs load within 2s on 4G.
+Workout Plan Schema
+WorkoutPlan → WorkoutDay → WorkoutExercise → Sets. Relational with cascade delete.
+'Create Prisma models WorkoutPlan, WorkoutDay, WorkoutExercise, and LoggedSet with appropriate relations and a createdAt field on each.'
+Confirm deleting a plan cascades cleanly. Verify plan can be duplicated / templated.
+Live Workout Screen
+Optimistic UI updates. Local state for active session, sync to backend on completion.
+'Build a LiveWorkoutScreen with a FlatList of exercises. Each row shows exercise name, a SetLogger sub-component with weight and reps inputs, and a rest timer trigger.'
+Test on slow network — session must not lose data if connection drops. Timer must survive screen lock.
+AI Workout Suggestion
+Call Claude API with user's recent workout history and goal. Return structured workout object.
+'Write a server action that sends the last 5 workout logs and the user goal to the Anthropic API and parses the response into a WorkoutPlan JSON object.'
+Validate suggested workout respects equipment constraints set in user profile. Confirm JSON parse never throws.
+
+6. Module 4 – AI Chat Assistant
+6.1 Feature Specifications
+The AI Chat module provides users with an always-on wellness coach they can query in plain language. Unlike a general-purpose chatbot, NutriFlow's assistant has full context of the user's health data, nutrition logs, and workout history, enabling genuinely personalised responses.
+
+Feature
+User Story
+Acceptance Criteria
+Priority
+Context-Aware Chat
+As a user I want the AI to know my nutrition and workout data so answers are relevant to me personally.
+System prompt includes today's macro summary, last 3 workouts, and health goals. Responses reference user data.
+P0 – Must
+General Wellness Q&A
+As a user I want to ask any nutrition or fitness question so I get evidence-based answers.
+AI answers questions on diet, exercise science, sleep, supplements. Declines medical diagnosis. Suggests GP if relevant.
+P0 – Must
+Recipe & Meal Suggestions via Chat
+As a user I want to ask the AI for meal ideas within my calorie budget so I get instant suggestions.
+AI reads remaining calories from today's log and suggests 2–3 meals with macro breakdown. Tap to open full recipe.
+P1 – High
+Conversation History
+As a user I want to review past chat sessions so I can refer back to advice I received.
+Sessions stored per day. Side panel lists last 30 sessions. Search across session history.
+P1 – High
+Voice Input
+As a user I want to speak my question so I can use the assistant hands-free during a workout.
+Speech-to-text via device native API. Works in background mode. Transcript shown before submitting.
+P2 – Medium
+Quick Action Chips
+As a user I want suggested question chips so I can get started quickly without typing.
+5 context-aware chips displayed below input: e.g. 'What should I eat for dinner?', 'Suggest a rest day routine.'
+P2 – Medium
+
+6.2 Implementation Guidance
+Component
+Tech / Approach
+Antigravity Prompt Hint
+Human Review Focus
+LLM Integration
+Anthropic Claude API (claude-sonnet-4-20250514). Streaming responses via SSE for real-time feel.
+'Create a Next.js API route /api/chat that accepts messages[] and streams a Claude API response using the Anthropic SDK with stream: true.'
+Confirm streaming chunks render smoothly. Verify system prompt is never exposed to client.
+System Prompt Design
+Inject: user name, today's macro totals, calorie remaining, last workout date + type, current health goal.
+'Build a buildSystemPrompt(user, todayLog, lastWorkout) function that returns a string under 800 tokens personalising Claude's responses.'
+Check prompt stays under token limit even for power users with large history. Verify no PII leaks into logs.
+Chat Storage
+Message table: id, sessionId, role (user/assistant), content, timestamp. Index on sessionId.
+'Generate a Prisma schema for ChatSession and ChatMessage models. ChatMessage has role enum USER | ASSISTANT and a sessionId FK.'
+Verify messages load in correct chronological order. Confirm session list sorts by most recent.
+Voice Input
+expo-speech (TTS) + expo-av or react-native-voice for STT. Show interim transcript.
+'Integrate react-native-voice for STT. Bind the recognised speech to the chat input state. Show a pulsing mic icon while listening.'
+Test mic permission denied flow. Confirm transcript is editable before submission.
+
+7. Module 5 – AI Kitchen Cook  ★ USP
+
+This module is the primary differentiator of NutriFlow. No mainstream health app combines live kitchen inventory tracking with AI-generated meal suggestions, full recipes, macro breakdowns, and curated cooking videos in a single seamless flow. Every design and engineering decision here should optimise for delight and effortlessness.
+
+7.1 Feature Specifications
+The Kitchen Cook module operates as a three-step loop: (1) User keeps their inventory current, (2) AI suggests meals using available ingredients matched to nutritional goals, (3) User picks a meal, gets the recipe with macros, and watches the cooking video if available.
+
+Feature
+User Story
+Acceptance Criteria
+Priority
+Kitchen Inventory Manager
+As a user I want to add and track ingredients in my kitchen so the AI knows what I have available.
+Users can add items via text search, barcode scan, or voice. Each item stores name, quantity, unit, and optional expiry date. Items marked 'running low' at user-defined threshold.
+P0 – Must
+AI Meal Suggestion Engine
+As a user I want the AI to suggest meals I can cook right now using only what's in my kitchen.
+AI suggests 3–5 meals ranked by: ingredient match %, remaining daily calories, user dietary preferences. Suggestions refresh on inventory change.
+P0 – Must
+Ingredient Match Score
+As a user I want to see how well each suggested meal matches my current inventory so I can make an informed choice.
+Each suggestion shows a '% ingredients available' badge and lists the 1–2 missing items (if any) with quantity needed.
+P0 – Must
+Full AI-Generated Recipe
+As a user I want to see the complete recipe for a suggested meal so I can cook it step by step.
+Recipe shows: title, servings, total time, ingredient list with quantities, numbered steps. Macros (cal, protein, carbs, fat) shown per serving.
+P0 – Must
+Cooking Video Integration
+As a user I want a linked cooking video so I can watch how the dish is made while following the recipe.
+System searches YouTube (or curated library) for a matching video. Video thumbnail shown on recipe card. Opens in-app player or YouTube app.
+P1 – High
+Inventory Deduction on Cook
+As a user I want my inventory to update automatically when I mark a recipe as cooked so I don't have to do it manually.
+Tapping 'I cooked this' deducts ingredient quantities from inventory. Items reaching zero are removed or flagged for restock.
+P1 – High
+Expiry Date Alerts
+As a user I want to be notified when ingredients are about to expire so I can use them before they go to waste.
+Push notification 2 days before expiry. Dashboard section 'Use Soon' shows expiring items sorted by date. AI prioritises these in suggestions.
+P1 – High
+Shopping List Generator
+As a user I want to generate a shopping list from missing recipe ingredients so I know exactly what to buy.
+One-tap 'Add to Shopping List' for missing ingredients. Shopping list deduplicates and groups by category. Export as shareable text.
+P2 – Medium
+Dietary Preference Filters
+As a user I want to set dietary preferences (vegetarian, vegan, gluten-free) so meal suggestions always respect my restrictions.
+Preferences stored in user profile. AI instruction set excludes non-compliant ingredients. Filter chip visible on suggestion screen.
+P1 – High
+Cuisine Preference
+As a user I want to preference a cuisine type (Indian, Mediterranean, etc.) so suggestions feel culturally relevant.
+Cuisine preference saved in profile. Weighted into AI ranking. User can override per session from suggestion screen.
+P2 – Medium
+
+7.2 AI Meal Suggestion — Data Flow
+Understanding the data flow is critical for Antigravity to generate correct integrations. The process runs as follows: the client sends the user's current inventory list (ingredient names + quantities), daily calorie remaining, dietary restrictions, and cuisine preference to the backend. The backend constructs a structured prompt for the Claude API requesting a JSON array of meal suggestions. Each suggestion object contains the meal name, ingredient list with required quantities, step-by-step instructions, estimated macros, and a search query string for the cooking video lookup. The backend then calls the YouTube Data API v3 using the search query and appends the top video result (title, thumbnail, videoId) to each suggestion before returning the enriched payload to the client.
+
+Antigravity Prompt Hint for the Meal Engine: 'Create a FastAPI endpoint POST /api/kitchen/suggest. It accepts a KitchenSuggestRequest body with fields: inventory (list of {name, quantity, unit}), caloriesRemaining (int), dietaryRestrictions (list[str]), cuisinePreference (str). Build a buildMealPrompt() function that serialises this into a Claude API call requesting a JSON array of MealSuggestion objects. Each MealSuggestion has: title, ingredientMatch (float), ingredients (list of {name, qty, unit}), missingIngredients (list), steps (list[str]), macros ({calories, protein, carbs, fat}), videoSearchQuery (str).'
+
+7.3 Implementation Guidance
+Component
+Tech / Approach
+Antigravity Prompt Hint
+Human Review Focus
+Inventory Data Model
+Postgres table: InventoryItem {id, userId, name, quantity, unit, expiryDate, lowThreshold, createdAt}. Index on userId + expiryDate.
+'Generate a Prisma model InventoryItem with the fields above. Add a Prisma computed field daysUntilExpiry. Create a getExpiringItems(userId, withinDays) service function.'
+Verify quantity updates are atomic (no race condition if two tabs open). Check expiry notifications fire exactly once per day.
+AI Meal Suggestion API
+FastAPI + Anthropic SDK. Prompt engineering: structured JSON output mode. Cache suggestions for 10 min unless inventory changes.
+'Build the FastAPI endpoint as described in the data flow section. Use instructor or raw JSON mode in Claude to ensure type-safe response parsing. Return 400 if inventory is empty.'
+Confirm JSON parse never throws — add a try/except with fallback empty array. Verify suggestions change when inventory changes (cache invalidation).
+Recipe Display Screen
+Full-screen scrollable card. Sections: Hero image, Macros pill row, Ingredient list (with availability ticks), Numbered steps, Video player.
+'Build a RecipeDetailScreen component. It receives a MealSuggestion prop. Render a MealMacroBar, an IngredientChecklist with in-stock/missing variants, a StepList with step numbers, and a VideoPlayer component.'
+Confirm ingredient check marks are correct relative to current inventory. Verify video plays inline without leaving app. Check screen works in dark mode.
+YouTube Video Search
+YouTube Data API v3. Call server-side to protect API key. Cache result per recipe title for 24h.
+'Create a searchCookingVideo(query: str) async function that calls the YouTube Data API v3 search endpoint, filters by videoCategoryId=26 (How-to), and returns the top result as {videoId, title, thumbnailUrl}.'
+Check fallback when no video found (hide player section gracefully). Confirm API key is never exposed to client. Verify thumbnail loads over HTTPS.
+Inventory Deduction
+Transaction: for each recipe ingredient, find matching InventoryItem and subtract quantity. Mark zero-quantity items as depleted.
+'Write a Prisma transaction function deductRecipeIngredients(userId, ingredients[]) that matches by name (case-insensitive), subtracts quantities, and sets quantity to 0 if result is negative. Return a summary of changed items.'
+Test partial match (recipe needs 200g chicken, user has 150g). Confirm deduction is reversible (undo within 60s).
+Expiry Notifications
+CRON job (daily 8 AM user local time). Use Expo Push Notifications or Firebase FCM.
+'Create a daily CRON job in Node that queries InventoryItems expiring in ≤ 2 days, groups by userId, and sends a push notification via Expo Push API with a summary like: "2 items in your kitchen expire soon: milk, spinach."'
+Verify notification only fires once per item per alert window. Test on both iOS and Android. Confirm notification deep-links to inventory screen.
+Shopping List
+ShoppingList table linked to user. Items grouped by category (Produce, Dairy, Protein, etc.) using AI classification.
+'Build a POST /api/shopping/add endpoint that accepts a list of ingredient names, uses Claude to classify each into a grocery category, and upserts them into a ShoppingList table. Expose a GET endpoint returning items grouped by category.'
+Confirm duplicate items are merged (same name + unit). Verify share export formats cleanly as plain text.
+
+8. Non-Functional Requirements
+
+Category
+Requirement
+Target Metric
+Performance
+App cold start time
+< 3 seconds on mid-range Android device
+Performance
+API response time (p95)
+< 800ms for non-AI endpoints; < 4s for AI endpoints
+Performance
+AI meal suggestion latency
+< 5 seconds end-to-end including video lookup
+Scalability
+Concurrent users (MVP launch)
+Support 500 concurrent users without degradation
+Reliability
+Uptime SLA
+99.5% monthly uptime for production APIs
+Security
+Authentication
+JWT + refresh token rotation. Passwords bcrypt-hashed (cost 12).
+Security
+PII handling
+Health data encrypted at rest (AES-256). Never sent to AI without anonymisation.
+Security
+API key management
+All third-party API keys server-side only. Never bundled in client app.
+Accessibility
+Mobile UI
+Minimum tap target 44×44pt. WCAG AA colour contrast for all text.
+Offline Support
+Core features
+Meal log and workout log must work offline and sync on reconnect.
+Data Portability
+Export
+User can export all personal data as JSON within 48 hours of request.
+
+9. Recommended Tech Stack
+The following stack is optimised for rapid development with Antigravity code generation, strong AI integration capabilities, and cross-platform reach from a single codebase.
+
+Layer
+Technology
+Rationale
+Mobile / Web Frontend
+React Native (Expo) + Next.js (web)
+Single React skill set across mobile and web. Expo accelerates device API access (camera, health, push).
+State Management
+Zustand (lightweight) or Redux Toolkit
+Zustand is simpler for AI-heavy apps. Redux Toolkit if team scales.
+Backend API
+FastAPI (Python)
+Best-in-class AI library ecosystem (Anthropic, LangChain). Async-native. Auto-generates OpenAPI docs.
+Database
+PostgreSQL + Prisma ORM
+Relational integrity for nutrition/workout data. Prisma generates type-safe queries, excellent for Antigravity prompts.
+AI / LLM
+Anthropic Claude (claude-sonnet-4-20250514)
+Superior instruction-following for structured JSON output. Best for recipe and health content generation.
+Food Database
+Open Food Facts API + USDA FoodData Central
+Free, large, global coverage. Open Food Facts especially strong for packaged Indian products.
+Video Integration
+YouTube Data API v3
+Largest recipe video corpus. Free tier sufficient for MVP (10,000 units/day).
+Auth
+NextAuth.js (web) / Expo Auth Session (mobile)
+Supports social login (Google, Apple). JWT-based. Easy to extend.
+Push Notifications
+Expo Push Notifications + FCM
+Unified API for iOS and Android. Handles expiry alerts and workout reminders.
+Storage / CDN
+AWS S3 + CloudFront
+Profile photos, exercise GIFs, recipe images. CDN ensures fast load globally.
+Hosting
+Railway (backend) + Vercel (web)
+Both have generous free tiers ideal for a final year project. One-command deploys.
+
+10. Antigravity + Human Review Workflow
+10.1 Development Cycle
+Each feature follows a four-stage cycle designed to maximise what Antigravity generates correctly on the first pass while keeping the human reviewer's effort focused and efficient.
+
+	•	Stage 1 – Prompt Construction: Use the Antigravity Prompt Hints from this document as the base. Append specific constraints: component name, props interface, expected API shape, and any edge cases to handle. The more precise the prompt, the fewer review iterations needed.
+	•	Stage 2 – Generation & Initial Review: Antigravity generates the component or endpoint. Run it locally immediately. Check the Human Review Focus column for that feature — these are the first things to validate.
+	•	Stage 3 – Functional Verification: Execute the acceptance criteria from the feature spec as manual or automated tests. If a criterion fails, refine the prompt and regenerate only the failing part, not the entire file.
+	•	Stage 4 – UX Review: As the human reviewer, evaluate the generated UI for: visual hierarchy, tap target size, loading state quality, error state handling, and dark mode correctness. Log issues as annotated screenshots and feed them back into the next Antigravity prompt.
+
+10.2 Prompt Writing Best Practices for Antigravity
+	•	Always specify the exact component name, file path, and framework (React Native / Next.js / FastAPI).
+	•	Include the TypeScript interface or Pydantic model for all props / request bodies — Antigravity outputs cleaner code when types are explicit.
+	•	Mention error states, loading states, and empty states explicitly in the prompt — they are commonly omitted without instruction.
+	•	For AI integration prompts, always specify: model name, max_tokens, whether to stream, and the expected JSON schema of the response.
+	•	After each review cycle, prepend a brief changelog to the prompt: 'Previous version had X issue. Fix by doing Y.' This anchors Antigravity's regeneration correctly.
+
+10.3 Human Review Gate Checklist
+Before marking any feature as done, run through this gate:
+
+#
+Check
+Pass Criteria
+1
+All acceptance criteria from the feature spec are met
+All criteria checked manually or via test
+2
+API keys and secrets are server-side only
+No key visible in client bundle or logs
+3
+Loading state is shown during async operations
+Spinner / skeleton visible within 100ms of action
+4
+Error state is handled gracefully with user-friendly message
+No raw error objects shown to user
+5
+Empty state is designed (no data yet scenario)
+Illustration or guidance copy shown when list is empty
+6
+UI renders correctly on small screen (375px / iPhone SE)
+No overflow, truncation, or layout break
+7
+Dark mode is correct (if implemented)
+No white-on-white or black-on-black text
+8
+AI responses never expose PII or system prompt content
+Reviewed 5 sample AI outputs manually
+9
+Offline behaviour is graceful
+App does not crash or show blank screen without connectivity
+10
+Feature is wired to real data (not hardcoded / mocked)
+Confirmed by changing data and observing UI update
+
+11. Development Milestones
+
+Sprint
+Milestone
+Deliverables
+Exit Criteria
+Sprint 1
+Foundation
+Auth, user profile, DB schema, navigation shell, design system tokens
+App runs on device, login/logout works, all screens navigable with placeholder content
+Sprint 2
+Nutrition Tracker
+Food search, meal logging, daily totals, macro ring, water tracker
+User can log 3 meals and see correct calorie total and macro ring update in real time
+Sprint 3
+Health Dashboard
+Weight logging, vitals, sleep, steps integration, trend charts
+Weight trend chart renders for 7-day data; HealthKit / Google Fit syncs step count
+Sprint 4
+Gym Module
+Exercise library, workout builder, live logger, rest timer, history
+User can complete a full workout session end-to-end and view it in workout history
+Sprint 5
+AI Chat
+Context-aware chat, conversation history, quick chips, streaming responses
+AI references today's macro data in response; streaming renders smoothly
+Sprint 6
+Kitchen Cook MVP
+Inventory manager, AI meal suggestions, recipe display, macro display
+User adds 5 ingredients, AI returns 3 relevant meal suggestions with full recipes
+Sprint 7
+Kitchen Cook Complete
+Cooking video integration, inventory deduction, expiry alerts, shopping list
+Video loads on recipe screen; deduct-on-cook updates inventory correctly; expiry alert fires
+Sprint 8
+Polish & Launch
+Performance tuning, offline support, dark mode, export, review gate completion
+All 10 human review gate checks pass for every module
+
+12. Open Questions & Decisions Pending
+	•	OQ-1 – Monetisation: Will the app be free, freemium, or subscription-based at launch? This affects how AI API costs are managed and whether usage limits apply to the Kitchen Cook module.
+	•	OQ-2 – Indian Food Database: Open Food Facts has partial coverage for regional Indian dishes. Decision needed: build a custom seed dataset for common Indian foods and recipes, or integrate a paid API (Nutritionix has Indian food support).
+	•	OQ-3 – Video Licensing: YouTube links are acceptable for MVP. Post-MVP, evaluate whether to build a curated in-app video library to avoid API quota limits and improve content quality control.
+	•	OQ-4 – Wearable Support: Garmin and Fitbit integrations are not in scope for MVP. Decision needed on roadmap priority relative to platform maturity.
+	•	OQ-5 – Recipe Content Generation vs Curation: The current design uses AI to generate recipes on-the-fly. An alternative is to curate a recipe database and use AI only for matching. Hybrid recommended: curated DB as primary, AI generation as fallback.
+
+
+End of Document  ·  NutriFlow PRD v1.0

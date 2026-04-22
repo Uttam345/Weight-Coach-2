@@ -1,22 +1,41 @@
+import React, { useState } from 'react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { Sparkles, Activity, Utensils, BrainCircuit, ArrowRight, Zap, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { AuthModal } from '../components/auth/AuthModal';
 
 const LandingPage = () => {
     const navigate = useNavigate();
-    const { setUser } = useAuthStore();
+    const { user } = useAuthStore();
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [authView, setAuthView] = useState<'login' | 'register'>('register');
     
     const handleStart = () => {
-        setUser({ _id: 'mock123', name: 'Demo User', email: 'demo@example.com', token: 'mock-token' });
-        navigate('/dashboard');
+        if (user) {
+            navigate('/dashboard');
+        } else {
+            setAuthView('register');
+            setIsAuthModalOpen(true);
+        }
+    };
+
+    const handleLoginClick = () => {
+        setAuthView('login');
+        setIsAuthModalOpen(true);
     };
 
     return (
         <div className="flex flex-col gap-24 pb-20">
             {/* Hero Section */}
             <section className="relative min-h-[80vh] flex flex-col justify-center items-center text-center px-4 pt-20">
+                <div className="absolute top-4 right-4 z-50">
+                    {!user && (
+                        <Button variant="secondary" onClick={handleLoginClick}>Sign In</Button>
+                    )}
+                </div>
+
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 animate-fade-in">
                     <Sparkles className="w-4 h-4 text-primary" />
                     <span className="text-sm font-medium text-gray-300">AI-Powered Transformations</span>
@@ -36,7 +55,7 @@ const LandingPage = () => {
 
                 <div className="flex flex-col sm:flex-row items-center gap-4 animate-fade-in [animation-delay:600ms]">
                     <Button size="lg" className="w-full sm:w-auto group" onClick={handleStart}>
-                        Start Your Journey
+                        {user ? 'Go to Dashboard' : 'Start Your Journey'}
                         <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                     <Button variant="secondary" size="lg" className="w-full sm:w-auto" onClick={handleStart}>
@@ -195,6 +214,12 @@ const LandingPage = () => {
                     ))}
                 </div>
             </section>
+
+            <AuthModal 
+                isOpen={isAuthModalOpen} 
+                onClose={() => setIsAuthModalOpen(false)} 
+                defaultView={authView}
+            />
         </div>
     );
 };

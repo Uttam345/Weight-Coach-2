@@ -4,16 +4,32 @@ import { Menu, X, Dumbbell } from 'lucide-react';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
 import { useAuthStore } from '../../store/authStore';
+import { AuthModal } from '../auth/AuthModal';
 
 const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [authView, setAuthView] = useState<'login' | 'register'>('login');
     const navigate = useNavigate();
-    const { setUser } = useAuthStore();
+    const { user, logout } = useAuthStore();
     
-    const handleLogin = () => {
-        setUser({ _id: 'mock123', name: 'Demo User', email: 'demo@example.com', token: 'mock-token' });
-        navigate('/dashboard');
+    const handleLoginClick = () => {
+        setAuthView('login');
+        setIsAuthModalOpen(true);
+        setMobileMenuOpen(false);
+    };
+
+    const handleSignupClick = () => {
+        setAuthView('register');
+        setIsAuthModalOpen(true);
+        setMobileMenuOpen(false);
+    };
+
+    const handleSignout = () => {
+        logout();
+        navigate('/');
+        setMobileMenuOpen(false);
     };
 
     useEffect(() => {
@@ -25,10 +41,10 @@ const Navbar = () => {
     }, []);
 
     const navLinks = [
-        { name: 'Features', href: '#features' },
-        { name: 'Workouts', href: '#workouts' },
-        { name: 'Nutrition', href: '#nutrition' },
-        { name: 'Pricing', href: '#pricing' },
+        { name: 'Features', href: '/#features' },
+        { name: 'Workouts', href: '/#workouts' },
+        { name: 'Nutrition', href: '/#nutrition' },
+        { name: 'Pricing', href: '/#pricing' },
     ];
 
     return (
@@ -64,12 +80,25 @@ const Navbar = () => {
 
                 {/* CTA */}
                 <div className="hidden md:flex items-center gap-4">
-                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white" onClick={handleLogin}>
-                        Sign In
-                    </Button>
-                    <Button size="sm" variant="primary" onClick={handleLogin}>
-                        Get Started
-                    </Button>
+                    {user ? (
+                        <>
+                            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white" onClick={() => navigate('/dashboard')}>
+                                Dashboard
+                            </Button>
+                            <Button size="sm" variant="secondary" onClick={handleSignout}>
+                                Sign Out
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white" onClick={handleLoginClick}>
+                                Sign In
+                            </Button>
+                            <Button size="sm" variant="primary" onClick={handleSignupClick}>
+                                Get Started
+                            </Button>
+                        </>
+                    )}
                 </div>
 
                 {/* Mobile Menu Button */}
@@ -95,14 +124,33 @@ const Navbar = () => {
                         </a>
                     ))}
                     <div className="h-px bg-white/10 my-2" />
-                    <Button variant="secondary" className="w-full justify-center" onClick={handleLogin}>
-                        Sign In
-                    </Button>
-                    <Button variant="primary" className="w-full justify-center" onClick={handleLogin}>
-                        Get Started
-                    </Button>
+                    {user ? (
+                        <>
+                            <Button variant="ghost" className="w-full justify-center" onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}>
+                                Dashboard
+                            </Button>
+                            <Button variant="secondary" className="w-full justify-center" onClick={handleSignout}>
+                                Sign Out
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Button variant="secondary" className="w-full justify-center" onClick={handleLoginClick}>
+                                Sign In
+                            </Button>
+                            <Button variant="primary" className="w-full justify-center" onClick={handleSignupClick}>
+                                Get Started
+                            </Button>
+                        </>
+                    )}
                 </div>
             )}
+
+            <AuthModal 
+                isOpen={isAuthModalOpen} 
+                onClose={() => setIsAuthModalOpen(false)} 
+                defaultView={authView}
+            />
         </nav>
     );
 };
