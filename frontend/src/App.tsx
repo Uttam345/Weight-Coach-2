@@ -10,6 +10,7 @@ import AICoach from './pages/dashboard/AICoach';
 import Nutrition from './pages/dashboard/Nutrition';
 import Workouts from './pages/dashboard/Workouts';
 import KitchenAssistant from './pages/dashboard/KitchenAssistant';
+import Health from './pages/dashboard/Health';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path="nutrition" element={<Nutrition />} />
           <Route path="kitchen" element={<KitchenAssistant />} />
           <Route path="workouts" element={<Workouts />} />
+          <Route path="health" element={<Health />} />
         </Route>
       </Routes>
     </BrowserRouter>

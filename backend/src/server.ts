@@ -6,6 +6,10 @@ import { connectDB } from './config/db';
 import authRoutes from './routes/authRoutes';
 import aiRoutes from './routes/aiRoutes';
 import nutritionRoutes from './routes/nutritionRoutes';
+import workoutRoutes from './routes/workoutRoutes';
+import pantryRoutes from './routes/pantryRoutes';
+import healthRoutes from './routes/healthRoutes';
+import shoppingRoutes from './routes/shoppingRoutes';
 
 dotenv.config();
 
@@ -23,6 +27,10 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/nutrition', nutritionRoutes);
+app.use('/api/workouts', workoutRoutes);
+app.use('/api/pantry', pantryRoutes);
+app.use('/api/health', healthRoutes);
+app.use('/api/shopping', shoppingRoutes);
 
 app.get('/', (req, res) => {
     res.send('Weight Coach AI Backend is running!');

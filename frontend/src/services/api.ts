@@ -46,6 +46,11 @@ export const aiApi = {
         request('/ai/analyze-food', {
             method: 'POST',
             body: JSON.stringify({ foodName }),
+        }),
+    suggestMeals: (inventory: any[], caloriesRemaining: number, dietaryRestrictions: string[] = [], cuisinePreference: string = '') =>
+        request('/ai/meal-suggestions', {
+            method: 'POST',
+            body: JSON.stringify({ inventory, caloriesRemaining, dietaryRestrictions, cuisinePreference }),
         })
 };
 
