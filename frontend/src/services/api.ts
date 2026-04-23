@@ -37,10 +37,10 @@ export const request = async (endpoint: string, options: RequestInit = {}) => {
 };
 
 export const aiApi = {
-    chat: (message: string, history: any[]) => 
+    chat: (message: string, history: any[], context?: string) => 
         request('/ai/chat', {
             method: 'POST',
-            body: JSON.stringify({ message, history }),
+            body: JSON.stringify({ message, history, context }),
         }),
     analyzeFood: (foodName: string) =>
         request('/ai/analyze-food', {

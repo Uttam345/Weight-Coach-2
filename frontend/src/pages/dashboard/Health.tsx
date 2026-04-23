@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Scale, Heart, Moon, Footprints, Flame, Plus, Loader2, TrendingUp, AlertTriangle, X, Activity } from 'lucide-react';
 import { useHealthStore, type MetricType } from '../../store/healthStore';
+import { useAuthStore } from '../../store/authStore';
 import { TrendChart } from '../../components/ui/TrendChart';
 
 // ─── Normal ranges for out-of-range flagging ───────────────────────────────
@@ -148,7 +149,8 @@ const Health = () => {
     const [logInitialType, setLogInitialType] = useState<MetricType>('weight');
     const [chartMetric, setChartMetric] = useState<MetricType>('weight');
     const [chartDays, setChartDays] = useState(30);
-    const [userHeight, setUserHeight] = useState(170); // cm, user-editable
+    const { user } = useAuthStore();
+    const [userHeight, setUserHeight] = useState(user?.height || 170); // cm, user-editable
 
     useEffect(() => {
         fetchLatest();

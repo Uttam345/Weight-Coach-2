@@ -3,18 +3,18 @@ import { chatWithCoach, analyzeFoodMacro, suggestMealsFromInventory } from '../s
 
 export const handleChat = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { message, history } = req.body;
+        const { message, history, context } = req.body;
         
         if (!message) {
             res.status(400).json({ message: "Message is required." });
             return;
         }
 
-        const responseText = await chatWithCoach(message, history || []);
+        const responseText = await chatWithCoach(message, history || [], context);
         res.status(200).json({ text: responseText });
-    } catch (error) {
+    } catch (error: any) {
         console.error("handleChat error:", error);
-        res.status(500).json({ message: "Server error during AI chat." });
+        res.status(500).json({ message: error.message || "Server error during AI chat." });
     }
 };
 

@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { aiApi } from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
+import { useNutritionStore } from '../../store/nutritionStore';
+import { useWorkoutStore } from '../../store/workoutStore';
 
 const AICoach = () => {
     const [messages, setMessages] = useState<{sender: 'ai' | 'user', text: string}[]>([
@@ -8,6 +11,10 @@ const AICoach = () => {
     ]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+
+    const { user } = useAuthStore();
+    const { currentLog, goals } = useNutritionStore();
+    const { workouts } = useWorkoutStore();
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,8 +30,15 @@ const AICoach = () => {
             parts: [{ text: m.text }] 
         }));
 
+        const context = `User: ${user?.name || 'Anonymous'}
+Weight: ${user?.weight}kg, Height: ${user?.height}cm
+Dietary Preference: ${user?.dietaryPreference}
+Goal: ${user?.dailyCalorieGoal || goals.calories} kcal/day
+Today's Meals Logged: ${currentLog?.meals ? Object.values(currentLog.meals).flat().length : 0} items
+Total Workouts: ${workouts?.length || 0}`;
+
         try {
-            const apiRes = await aiApi.chat(currentInput, geminiHistory);
+            const apiRes = await aiApi.chat(currentInput, geminiHistory, context);
             setMessages(prev => [...prev, { sender: 'ai', text: apiRes.text }]);
         } catch (error) {
             console.error("AI Chat Error:", error);

@@ -15,7 +15,7 @@ interface KitchenState {
     suggestions: MealSuggestion[];
     isGenerating: boolean;
     error: string | null;
-    generateSuggestions: (inventory: any[], caloriesRemaining: number) => Promise<void>;
+    generateSuggestions: (inventory: any[], caloriesRemaining: number, dietaryRestrictions: string[], cuisinePreference: string) => Promise<void>;
 }
 
 export const useKitchenStore = create<KitchenState>((set) => ({
@@ -23,10 +23,10 @@ export const useKitchenStore = create<KitchenState>((set) => ({
     isGenerating: false,
     error: null,
 
-    generateSuggestions: async (inventory, caloriesRemaining) => {
+    generateSuggestions: async (inventory, caloriesRemaining, dietaryRestrictions, cuisinePreference) => {
         set({ isGenerating: true, error: null });
         try {
-            const suggestions = await aiApi.suggestMeals(inventory, caloriesRemaining);
+            const suggestions = await aiApi.suggestMeals(inventory, caloriesRemaining, dietaryRestrictions, cuisinePreference);
             set({ suggestions, isGenerating: false });
         } catch (error: any) {
             set({ error: error.message, isGenerating: false });

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { API_URL } from '../services/api';
 
 export interface ShoppingItem {
     _id: string;
@@ -20,7 +21,7 @@ interface ShoppingState {
 }
 
 const getAuthToken = () => localStorage.getItem('token');
-const BASE_URL = 'http://localhost:5000/api/shopping';
+const BASE_URL = `${API_URL}/shopping`;
 
 const authHeaders = () => ({
     'Content-Type': 'application/json',

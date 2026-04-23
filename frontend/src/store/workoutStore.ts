@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { API_URL } from '../services/api';
 
 export interface Exercise {
     _id?: string;
@@ -32,7 +33,7 @@ interface WorkoutState {
 }
 
 const getAuthToken = () => localStorage.getItem('token');
-const BASE_URL = 'http://localhost:5000/api/workouts';
+const BASE_URL = `${API_URL}/workouts`;
 
 const authHeaders = () => ({
     'Content-Type': 'application/json',

@@ -10,6 +10,7 @@ import workoutRoutes from './routes/workoutRoutes';
 import pantryRoutes from './routes/pantryRoutes';
 import healthRoutes from './routes/healthRoutes';
 import shoppingRoutes from './routes/shoppingRoutes';
+import userRoutes from './routes/userRoutes';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/nutrition', nutritionRoutes);
 app.use('/api/workouts', workoutRoutes);

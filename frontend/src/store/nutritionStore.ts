@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { API_URL } from '../services/api';
 
 export interface FoodEntry {
   _id?: string;
@@ -41,8 +42,9 @@ interface NutritionState {
 }
 
 const getAuthToken = () => localStorage.getItem('token');
+const BASE_URL = `${API_URL}/nutrition`;
 
-export const useNutritionStore = create<NutritionState>((set, get) => ({
+export const useNutritionStore = create<NutritionState>((set) => ({
   currentLog: null,
   isLoading: false,
   error: null,
@@ -60,7 +62,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
       const token = getAuthToken();
       if (!token) throw new Error('Not authenticated');
 
-      const url = new URL('http://localhost:5000/api/nutrition');
+      const url = new URL(`${API_URL}/nutrition`);
       if (date) url.searchParams.append('date', date);
 
       const response = await fetch(url.toString(), {
@@ -81,7 +83,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
       const token = getAuthToken();
       if (!token) throw new Error('Not authenticated');
 
-      const response = await fetch('http://localhost:5000/api/nutrition/meal', {
+      const response = await fetch(`${BASE_URL}/meal`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +106,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
       const token = getAuthToken();
       if (!token) throw new Error('Not authenticated');
 
-      const response = await fetch('http://localhost:5000/api/nutrition/water', {
+      const response = await fetch(`${BASE_URL}/water`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

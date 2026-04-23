@@ -1,6 +1,6 @@
 import React from 'react';
 import { Play, Check, X as XIcon, Plus, Info, Clock, Flame, Utensils } from 'lucide-react';
-import { MealSuggestion } from '../../store/kitchenStore';
+import type { MealSuggestion } from '../../store/kitchenStore';
 
 interface RecipeModalProps {
     suggestion: MealSuggestion;

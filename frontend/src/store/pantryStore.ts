@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { API_URL } from '../services/api';
 
 export interface PantryItem {
     _id: string;
@@ -18,7 +19,7 @@ interface PantryState {
 }
 
 const getAuthToken = () => localStorage.getItem('token');
-const BASE_URL = 'http://localhost:5000/api/pantry';
+const BASE_URL = `${API_URL}/pantry`;
 
 const authHeaders = () => ({
     'Content-Type': 'application/json',

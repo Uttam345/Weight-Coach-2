@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { LayoutDashboard, MessageSquare, PieChart, Dumbbell, LogOut, User, ChefHat, Heart } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, PieChart, Dumbbell, LogOut, User, ChefHat, Heart, Settings as SettingsIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const DashboardLayout = () => {
@@ -19,6 +19,7 @@ const DashboardLayout = () => {
         { name: 'Health',    path: '/dashboard/health',     icon: Heart },
         { name: 'Kitchen OS',path: '/dashboard/kitchen',    icon: ChefHat },
         { name: 'Workouts',  path: '/dashboard/workouts',   icon: Dumbbell },
+        { name: 'Settings',  path: '/dashboard/settings',   icon: SettingsIcon },
     ];
 
     return (

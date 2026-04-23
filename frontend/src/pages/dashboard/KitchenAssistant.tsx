@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Search, Package, ShoppingCart, Loader2, Trash2, X, Plus, ChefHat, CheckSquare, Square, Zap, ChevronRight } from 'lucide-react';
+import { Package, ShoppingCart, Loader2, Trash2, X, Plus, ChefHat, CheckSquare, Square, Zap, ChevronRight } from 'lucide-react';
 import { usePantryStore, type PantryItem } from '../../store/pantryStore';
 import { useKitchenStore, type MealSuggestion } from '../../store/kitchenStore';
+import { useAuthStore } from '../../store/authStore';
 import { useShoppingStore } from '../../store/shoppingStore';
 import { useNutritionStore } from '../../store/nutritionStore';
 import RecipeModal from '../../components/ui/RecipeModal';
@@ -103,9 +104,11 @@ const KitchenAssistant = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [selectedRecipe, setSelectedRecipe] = useState<MealSuggestion | null>(null);
 
+    const { user } = useAuthStore();
+    
     // AI suggestion inputs
-    const [diet, setDiet] = useState<string>('none');
-    const [cuisine, setCuisine] = useState<string>('any');
+    const [diet, setDiet] = useState<string>(user?.dietaryPreference || 'none');
+    const [cuisine, setCuisine] = useState<string>(user?.cuisinePreference || 'any');
 
     useEffect(() => {
         fetchPantry();
@@ -117,11 +120,12 @@ const KitchenAssistant = () => {
     const meals = currentLog?.meals || { breakfast: [], lunch: [], dinner: [], snack: [] };
     const allEntries = [...meals.breakfast, ...meals.lunch, ...meals.dinner, ...meals.snack];
     const caloriesConsumed = allEntries.reduce((s, e) => s + e.calories, 0);
-    const caloriesRemaining = Math.max(goals.calories - caloriesConsumed, 0);
+    const caloriesTarget = user?.dailyCalorieGoal || goals.calories;
+    const caloriesRemaining = Math.max(caloriesTarget - caloriesConsumed, 0);
 
     const handleGenerate = () => {
         const dietArray = diet === 'none' ? [] : [diet];
-        generateSuggestions(pantryItems, caloriesRemaining);
+        generateSuggestions(pantryItems, caloriesRemaining, dietArray, cuisine);
     };
 
     const handleCook = async (recipe: MealSuggestion) => {
@@ -158,7 +162,13 @@ const KitchenAssistant = () => {
     };
 
     const handleAddMissingToShopping = (missingItems: {name: string, qty: number, unit: string, category: string}[]) => {
-        addShoppingItems(missingItems);
+        const mappedItems = missingItems.map(item => ({
+            name: item.name,
+            quantity: item.qty,
+            unit: item.unit,
+            category: item.category
+        }));
+        addShoppingItems(mappedItems);
         alert(`Added ${missingItems.length} items to your shopping list.`);
     };
 

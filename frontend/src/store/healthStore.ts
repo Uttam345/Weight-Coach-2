@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { API_URL } from '../services/api';
 
 export type MetricType = 'weight' | 'systolic' | 'diastolic' | 'heartRate' | 'sleepHours' | 'sleepQuality' | 'steps';
 
@@ -25,7 +26,7 @@ interface HealthState {
 }
 
 const getAuthToken = () => localStorage.getItem('token');
-const BASE_URL = 'http://localhost:5000/api/health';
+const BASE_URL = `${API_URL}/health`;
 
 const authHeaders = () => ({
     'Content-Type': 'application/json',

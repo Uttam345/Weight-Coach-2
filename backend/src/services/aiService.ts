@@ -7,23 +7,37 @@ if (!apiKey) {
     console.error("WARNING: GEMINI_API_KEY is missing in environment variables.");
 }
 
-const genAI = new GoogleGenerativeAI(apiKey || 'unauthorized');
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+const model = genAI ? genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }) : null;
 
-export const chatWithCoach = async (message: string, history: {role: 'user' | 'model', parts: {text: string}[]}[] = []) => {
+export const chatWithCoach = async (message: string, history: {role: 'user' | 'model', parts: {text: string}[]}[] = [], context: string = "") => {
     try {
+        const systemPrompt = `You are Coach Nova, an elite, hyper-intelligent fitness AI. You speak in a highly motivating, crisp, premium Gen-Z aesthetic tone. You provide precise, actionable fitness advice. Be concise.\n\nUser Context:\n${context}`;
+        
+        const validHistory: any[] = [
+            { role: "user", parts: [{ text: systemPrompt }] },
+            { role: "model", parts: [{ text: "Understood. I am Coach Nova. Let's sculpt." }] }
+        ];
+
+        let lastRole = "model";
+        for (const msg of history) {
+            if (msg.role === lastRole) {
+                validHistory.push({ 
+                    role: msg.role === 'model' ? 'user' : 'model', 
+                    parts: [{ text: "..." }] 
+                });
+            }
+            validHistory.push(msg);
+            lastRole = msg.role;
+        }
+
+        if (!model) {
+            // Mock response if API key is missing
+            return `[MOCK AI] I see your context! You weigh ${context.match(/Weight: (.*?)kg/)?.[1] || 'unknown'}kg and your goal is ${context.match(/Goal: (.*?) kcal/)?.[1] || 'unknown'} calories. Since no API key is provided, I'm running in local test mode! You said: "${message}"`;
+        }
+
         const chat = model.startChat({
-            history: [
-                {
-                    role: "user",
-                    parts: [{ text: "You are Coach Nova, an elite, hyper-intelligent fitness AI. You speak in a highly motivating, crisp, premium Gen-Z aesthetic tone. You provide precise, actionable actionable fitness advice. Be concise." }],
-                },
-                {
-                    role: "model",
-                    parts: [{ text: "Understood. I am Coach Nova. Let's sculpt." }],
-                },
-                ...history
-            ],
+            history: validHistory,
             generationConfig: {
                 maxOutputTokens: 250,
             },
@@ -31,9 +45,16 @@ export const chatWithCoach = async (message: string, history: {role: 'user' | 'm
 
         const result = await chat.sendMessage(message);
         return result.response.text();
-    } catch (error) {
+    } catch (error: any) {
         console.error("Chat Error:", error);
-        throw new Error("Failed to communicate with Coach Nova.");
+        // Catch suspended/invalid API key gracefully
+        if (error.status === 403 || (error.message && error.message.includes('CONSUMER_SUSPENDED'))) {
+            return "⚠️ Coach Nova is temporarily offline. The AI API key is suspended. Please update `GEMINI_API_KEY` in your backend `.env` file with a valid key from [aistudio.google.com](https://aistudio.google.com/app/apikey) and restart the server.";
+        }
+        if (error.status === 429) {
+            return "⚠️ Coach Nova hit the rate limit. Please wait a moment and try again!";
+        }
+        return `⚠️ Coach Nova encountered an error: ${error.message}`;
     }
 };
 
@@ -60,6 +81,16 @@ export const analyzeFoodMacro = async (foodName: string) => {
             }
             Do not include any markdown formatting, backticks, or extra text. Just the JSON object.
         `;
+
+        if (!model) {
+            return {
+                name: foodName,
+                cals: 350,
+                pro: 25,
+                carb: 30,
+                fat: 15
+            };
+        }
 
         const result = await model.generateContent(prompt);
         const parsedData = JSON.parse(stripJsonMarkdown(result.response.text()));
@@ -133,6 +164,20 @@ Rules:
 `;
 
     try {
+        if (!model) {
+            return [
+                {
+                    title: "[MOCK] Chicken & Broccoli",
+                    ingredientMatchPct: 100,
+                    ingredients: [{ name: "Chicken", qty: "200", unit: "g", available: true }],
+                    missingIngredients: [],
+                    steps: ["Cook chicken.", "Eat."],
+                    macros: { calories: 400, protein: 45, carbs: 10, fat: 5 },
+                    videoSearchQuery: "https://youtube.com"
+                }
+            ];
+        }
+
         const result = await model.generateContent(prompt);
         const suggestions: MealSuggestion[] = JSON.parse(stripJsonMarkdown(result.response.text()));
         return Array.isArray(suggestions) ? suggestions : [];
