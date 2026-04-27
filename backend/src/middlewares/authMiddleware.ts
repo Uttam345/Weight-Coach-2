@@ -17,10 +17,14 @@ declare global {
 export const protect = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
     let token;
 
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        try {
-            token = req.headers.authorization.split(' ')[1];
+    if (req.cookies && req.cookies.jwt) {
+        token = req.cookies.jwt;
+    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
 
+    if (token) {
+        try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as JwtPayload;
 
             req.user = await User.findById(decoded.id).select('-password');
@@ -30,9 +34,7 @@ export const protect = async (req: Request, res: Response, next: NextFunction): 
             console.error(error);
             res.status(401).json({ message: 'Not authorized, token failed' });
         }
-    }
-
-    if (!token) {
+    } else {
         res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
