@@ -1,16 +1,21 @@
 import { Request, Response } from 'express';
 import { chatWithCoach, analyzeFoodMacro, suggestMealsFromInventory } from '../services/aiService';
 
+import { buildComprehensiveUserContext } from '../utils/contextBuilder';
+
 export const handleChat = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { message, history, context } = req.body;
+        const { message, history } = req.body;
         
         if (!message) {
             res.status(400).json({ message: "Message is required." });
             return;
         }
 
-        const responseText = await chatWithCoach(message, history || [], context);
+        const userId = req.user._id.toString();
+        const comprehensiveContext = await buildComprehensiveUserContext(userId);
+
+        const responseText = await chatWithCoach(message, history || [], comprehensiveContext);
         res.status(200).json({ text: responseText });
     } catch (error: any) {
         console.error("handleChat error:", error);
@@ -60,8 +65,8 @@ export const handleMealSuggestions = async (req: Request, res: Response): Promis
         }));
 
         res.status(200).json(enrichedSuggestions);
-    } catch (error) {
+    } catch (error: any) {
         console.error("handleMealSuggestions error:", error);
-        res.status(500).json({ message: "Server error during meal suggestions." });
+        res.status(500).json({ message: error.message || "Server error during meal suggestions." });
     }
 };

@@ -1,11 +1,15 @@
 import mongoose from 'mongoose';
 
+const setSchema = new mongoose.Schema({
+    reps: { type: Number, required: true },
+    weight: { type: Number, required: true }, // in kg
+    isCompleted: { type: Boolean, default: false },
+    type: { type: String, enum: ['normal', 'warmup', 'drop', 'failure'], default: 'normal' }
+});
+
 const exerciseSchema = new mongoose.Schema({
     name: { type: String, required: true },
-    sets: { type: Number, required: true },
-    reps: { type: String, required: true }, // e.g. "8-10"
-    weight: { type: Number, default: 0 }, // in kg
-    done: { type: Boolean, default: false },
+    sets: [setSchema]
 });
 
 const workoutSchema = new mongoose.Schema({

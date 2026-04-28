@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { aiApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
@@ -11,6 +11,32 @@ const AICoach = () => {
     ]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages, isTyping]);
+
+    const formatMessageText = (text: string) => {
+        return text.split('\n').map((line, i) => {
+            const parts = line.split(/(\*\*.*?\*\*)/g);
+            return (
+                <span key={i}>
+                    {parts.map((part, j) => {
+                        if (part.startsWith('**') && part.endsWith('**')) {
+                            return <strong key={j} className="text-white font-semibold">{part.slice(2, -2)}</strong>;
+                        }
+                        return <span key={j}>{part}</span>;
+                    })}
+                    {i !== text.split('\n').length - 1 && <br />}
+                </span>
+            );
+        });
+    };
 
     const { user } = useAuthStore();
     const { currentLog, goals } = useNutritionStore();
@@ -67,21 +93,26 @@ Total Workouts: ${workouts?.length || 0}`;
                         <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center mt-1 border ${msg.sender === 'user' ? 'bg-dark-900 border-white/20' : 'bg-dark-900 border-accent-purple/40'}`}>
                             {msg.sender === 'user' ? <User className="w-4 h-4 text-gray-400" /> : <Bot className="w-4 h-4 text-accent-purple" />}
                         </div>
-                        <div className={`p-4 rounded-2xl ${msg.sender === 'user' ? 'bg-white/10 text-white rounded-tr-sm' : 'bg-glass border border-glass-border text-gray-200 rounded-tl-sm'}`}>
-                            {msg.text}
+                        <div className={`p-4 rounded-2xl ${msg.sender === 'user' ? 'bg-white/10 text-white rounded-tr-sm' : 'bg-glass border border-glass-border text-gray-200 rounded-tl-sm'} leading-relaxed shadow-sm`}>
+                            {formatMessageText(msg.text)}
                         </div>
                     </div>
                 ))}
                 {isTyping && (
-                    <div className="flex gap-4 max-w-[85%]">
+                    <div className="flex gap-4 max-w-[85%] animate-fade-in">
                         <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center mt-1 border bg-dark-900 border-accent-purple/40">
                             <Bot className="w-4 h-4 text-accent-purple" />
                         </div>
-                        <div className="p-4 rounded-2xl bg-glass border border-glass-border text-gray-200 rounded-tl-sm flex items-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-accent-purple" /> Thinking...
+                        <div className="p-4 rounded-2xl bg-glass border border-glass-border text-gray-200 rounded-tl-sm flex items-center gap-2 h-[42px]">
+                            <div className="flex space-x-1.5">
+                                <div className="w-2 h-2 rounded-full bg-accent-purple/70 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                <div className="w-2 h-2 rounded-full bg-accent-purple/70 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                <div className="w-2 h-2 rounded-full bg-accent-purple/70 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                            </div>
                         </div>
                     </div>
                 )}
+                <div ref={messagesEndRef} />
             </div>
 
             {/* Input Form */}

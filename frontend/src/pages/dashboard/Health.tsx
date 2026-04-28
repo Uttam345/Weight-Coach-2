@@ -255,6 +255,12 @@ const Health = () => {
                             value={userHeight}
                             onClick={e => e.stopPropagation()}
                             onChange={e => setUserHeight(parseInt(e.target.value) || 170)}
+                            onBlur={() => {
+                                const { updateProfile } = useAuthStore.getState();
+                                if (userHeight !== user?.height) {
+                                    updateProfile({ height: userHeight }).catch(console.error);
+                                }
+                            }}
                             className="w-16 bg-dark-900 border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
                         />
                         <span className="text-xs text-gray-500">cm</span>

@@ -31,14 +31,19 @@ export const getWorkoutHistory = async (req: Request, res: Response): Promise<an
     }
 };
 
+const setSchemaZod = z.object({
+    reps: z.number().min(0),
+    weight: z.number().min(0),
+    isCompleted: z.boolean().default(false),
+    type: z.enum(['normal', 'warmup', 'drop', 'failure']).default('normal')
+});
+
 const createWorkoutSchema = z.object({
     name: z.string().min(1),
     date: z.string().optional(),
     exercises: z.array(z.object({
         name: z.string(),
-        sets: z.number(),
-        reps: z.string(),
-        weight: z.number().optional(),
+        sets: z.array(setSchemaZod),
     })).optional(),
 });
 
@@ -66,35 +71,35 @@ export const createWorkout = async (req: Request, res: Response): Promise<any> =
     }
 };
 
-const toggleExerciseSchema = z.object({
-    exerciseIndex: z.number(),
-    done: z.boolean(),
-    weight: z.number().optional(),
+const syncWorkoutSchema = z.object({
+    exercises: z.array(z.object({
+        name: z.string(),
+        sets: z.array(setSchemaZod),
+    })),
 });
 
-// PUT /api/workouts/:id/exercise — Toggle an exercise done state or update weight
-export const updateExercise = async (req: Request, res: Response): Promise<any> => {
+// PUT /api/workouts/:id/sync — Sync the entire exercises array
+export const syncWorkout = async (req: Request, res: Response): Promise<any> => {
     try {
-        const data = toggleExerciseSchema.parse(req.body);
+        const data = syncWorkoutSchema.parse(req.body);
         const workout = await Workout.findOne({ _id: req.params.id, userId: req.user._id });
         if (!workout) return res.status(404).json({ message: 'Workout not found' });
 
-        const exercise = workout.exercises[data.exerciseIndex];
-        if (!exercise) return res.status(404).json({ message: 'Exercise not found' });
+        workout.exercises = data.exercises as any;
 
-        exercise.done = data.done;
-        if (data.weight !== undefined) exercise.weight = data.weight;
-
-        // Mark workout complete if all exercises are done
-        workout.isCompleted = workout.exercises.every(e => e.done);
+        // Mark workout complete if all exercises have at least one set and all sets are done
+        // Or we just let completeWorkout handle the isCompleted flag.
+        // For now, let's keep isCompleted independent or just check if anything is done.
+        
         await workout.save();
 
         res.json(workout);
-    } catch (error) {
+    } catch (error: any) {
+        console.error("Sync Workout Error:", error);
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: (error as any).errors[0].message });
         }
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: error.message || 'Server error' });
     }
 };
 

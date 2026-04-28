@@ -10,7 +10,7 @@ const getStartOfDay = (dateString?: string) => {
 
 export const getDailyLog = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
     const dateQuery = req.query.date as string;
     const date = getStartOfDay(dateQuery);
 
@@ -35,7 +35,7 @@ export const getDailyLog = async (req: Request, res: Response) => {
 
 export const addMealEntry = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
     const { mealType, entry, date: dateString } = req.body;
 
     if (!['breakfast', 'lunch', 'dinner', 'snack'].includes(mealType)) {
@@ -73,7 +73,7 @@ export const addMealEntry = async (req: Request, res: Response): Promise<void> =
 
 export const addWater = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
     const { amount, date: dateString } = req.body;
 
     if (!amount || typeof amount !== 'number') {

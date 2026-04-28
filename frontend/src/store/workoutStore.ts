@@ -1,13 +1,20 @@
 import { create } from 'zustand';
 import { API_URL } from '../services/api';
 
+export type SetType = 'normal' | 'warmup' | 'drop' | 'failure';
+
+export interface WorkoutSet {
+    _id?: string;
+    reps: number;
+    weight: number;
+    isCompleted: boolean;
+    type: SetType;
+}
+
 export interface Exercise {
     _id?: string;
     name: string;
-    sets: number;
-    reps: string;
-    weight: number;
-    done: boolean;
+    sets: WorkoutSet[];
 }
 
 export interface WorkoutSession {
@@ -27,8 +34,8 @@ interface WorkoutState {
     error: string | null;
     fetchTodayWorkout: () => Promise<void>;
     fetchHistory: () => Promise<void>;
-    createWorkout: (name: string, exercises: Omit<Exercise, 'done'>[]) => Promise<void>;
-    toggleExercise: (workoutId: string, exerciseIndex: number, done: boolean, weight?: number) => Promise<void>;
+    createWorkout: (name: string, exercises: Exercise[]) => Promise<void>;
+    syncWorkout: (workoutId: string, exercises: Exercise[]) => Promise<void>;
     completeWorkout: (workoutId: string, durationMinutes: number) => Promise<void>;
 }
 
@@ -40,7 +47,7 @@ const authHeaders = () => ({
     Authorization: `Bearer ${getAuthToken()}`,
 });
 
-export const useWorkoutStore = create<WorkoutState>((set) => ({
+export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     todayWorkout: null,
     history: [],
     isLoading: false,
@@ -75,7 +82,7 @@ export const useWorkoutStore = create<WorkoutState>((set) => ({
             const res = await fetch(BASE_URL, {
                 method: 'POST',
                 headers: authHeaders(),
-                body: JSON.stringify({ name, exercises: exercises.map(e => ({ ...e, done: false })) }),
+                body: JSON.stringify({ name, exercises }),
             });
             if (!res.ok) throw new Error('Failed to create workout');
             const data = await res.json();
@@ -85,18 +92,26 @@ export const useWorkoutStore = create<WorkoutState>((set) => ({
         }
     },
 
-    toggleExercise: async (workoutId, exerciseIndex, done, weight) => {
+    syncWorkout: async (workoutId, exercises) => {
+        // Optimistic update
+        const previousWorkout = get().todayWorkout;
+        if (previousWorkout && previousWorkout._id === workoutId) {
+            set({ todayWorkout: { ...previousWorkout, exercises } });
+        }
+
         try {
-            const res = await fetch(`${BASE_URL}/${workoutId}/exercise`, {
+            const res = await fetch(`${BASE_URL}/${workoutId}/sync`, {
                 method: 'PUT',
                 headers: authHeaders(),
-                body: JSON.stringify({ exerciseIndex, done, weight }),
+                body: JSON.stringify({ exercises }),
             });
-            if (!res.ok) throw new Error('Failed to update exercise');
+            if (!res.ok) throw new Error('Failed to sync workout');
             const data = await res.json();
             set({ todayWorkout: data });
         } catch (error: any) {
             set({ error: error.message });
+            // Revert on error
+            if (previousWorkout) set({ todayWorkout: previousWorkout });
         }
     },
 

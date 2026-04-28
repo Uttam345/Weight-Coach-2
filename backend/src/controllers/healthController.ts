@@ -88,7 +88,23 @@ export const getStreak = async (req: Request, res: Response): Promise<any> => {
 
         let streak = 0;
         const today = new Date().toISOString().split('T')[0];
-        let expected = today;
+        
+        let expectedDate = new Date();
+        // If they didn't log today, but logged yesterday, expected should start from yesterday
+        if (uniqueDates.length > 0 && uniqueDates[0] !== today) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            if (uniqueDates[0] === yesterdayStr) {
+                expectedDate = yesterday;
+            } else {
+                // They didn't log today or yesterday, streak is broken
+                return res.json({ streak: 0 });
+            }
+        }
+
+        let expected = expectedDate.toISOString().split('T')[0];
 
         for (const date of uniqueDates) {
             if (date === expected) {
