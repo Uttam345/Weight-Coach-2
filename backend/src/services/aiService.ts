@@ -9,9 +9,12 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey || '');
-// gemini-2.5-flash is used for chat (reasoning). gemini-2.5-flash-lite is used for
-// structured JSON tasks (food analysis, meal suggestions) to avoid hitting the
-// 64k thinking-token output limit that causes 500 errors on gemini-2.5-flash.
+// KITCHEN IQ AI MODELS:
+// - 'gemini-2.5-flash': Primary model for chat (reasoning, conversational AI).
+//   Used by Coach Nova for personalized fitness guidance.
+// - 'gemini-2.5-flash-lite': Fast model for structured JSON tasks (food analysis, meal suggestions).
+//   Optimized for deterministic outputs and lower latency. Avoids 64k thinking-token limits.
+// Note: Upgraded from Gemini 1.5 Flash (May 2026) for improved reasoning and performance.
 const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 const fastModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 

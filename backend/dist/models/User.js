@@ -18,6 +18,11 @@ const userSchema = new mongoose_1.default.Schema({
         type: String,
         required: true,
     },
+    height: { type: Number, default: 170 },
+    weight: { type: Number, default: 70 },
+    dailyCalorieGoal: { type: Number, default: 2000 },
+    dietaryPreference: { type: String, default: 'none' },
+    cuisinePreference: { type: String, default: 'any' }
 }, {
     timestamps: true,
 });

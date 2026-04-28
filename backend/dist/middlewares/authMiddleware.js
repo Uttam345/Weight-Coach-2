@@ -17,9 +17,14 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_1 = __importDefault(require("../models/User"));
 const protect = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     let token;
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    if (req.cookies && req.cookies.jwt) {
+        token = req.cookies.jwt;
+    }
+    else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+    if (token) {
         try {
-            token = req.headers.authorization.split(' ')[1];
             const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'fallback_secret');
             req.user = yield User_1.default.findById(decoded.id).select('-password');
             next();
@@ -29,7 +34,7 @@ const protect = (req, res, next) => __awaiter(void 0, void 0, void 0, function* 
             res.status(401).json({ message: 'Not authorized, token failed' });
         }
     }
-    if (!token) {
+    else {
         res.status(401).json({ message: 'Not authorized, no token' });
     }
 });
