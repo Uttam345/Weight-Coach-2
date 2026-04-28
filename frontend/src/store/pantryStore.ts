@@ -15,6 +15,7 @@ interface PantryState {
     error: string | null;
     fetchPantry: () => Promise<void>;
     addItem: (item: Omit<PantryItem, '_id'>) => Promise<void>;
+    updateItem: (id: string, data: Partial<PantryItem>) => Promise<void>;
     deleteItem: (id: string) => Promise<void>;
 }
 
@@ -53,6 +54,21 @@ export const usePantryStore = create<PantryState>((set, get) => ({
             if (!res.ok) throw new Error('Failed to add item');
             const newItem = await res.json();
             set({ items: [...get().items, newItem] });
+        } catch (error: any) {
+            set({ error: error.message });
+        }
+    },
+
+    updateItem: async (id, data) => {
+        try {
+            const res = await fetch(`${BASE_URL}/${id}`, {
+                method: 'PUT',
+                headers: authHeaders(),
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) throw new Error('Failed to update item');
+            const updatedItem = await res.json();
+            set({ items: get().items.map(i => i._id === id ? updatedItem : i) });
         } catch (error: any) {
             set({ error: error.message });
         }

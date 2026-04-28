@@ -95,14 +95,15 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ onClose, onAdd }) => {
 
 // --- Main Component ---
 const KitchenAssistant = () => {
-    const { items: pantryItems, isLoading: pantryLoading, fetchPantry, addItem, deleteItem } = usePantryStore();
+    const { items: pantryItems, isLoading: pantryLoading, fetchPantry, addItem, updateItem, deleteItem } = usePantryStore();
     const { items: shoppingList, fetchShoppingList, addItems: addShoppingItems, toggleItem: toggleShopping, clearChecked } = useShoppingStore();
-    const { suggestions, isGenerating, generateSuggestions } = useKitchenStore();
+    const { suggestions, isGenerating, error: aiError, generateSuggestions } = useKitchenStore();
     const { currentLog, goals, fetchDailyLog, addMealEntry } = useNutritionStore();
 
     const [activeTab, setActiveTab] = useState<'ai' | 'pantry' | 'shopping'>('ai');
     const [showAddModal, setShowAddModal] = useState(false);
     const [selectedRecipe, setSelectedRecipe] = useState<MealSuggestion | null>(null);
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
 
     const { user } = useAuthStore();
     
@@ -115,6 +116,11 @@ const KitchenAssistant = () => {
         fetchShoppingList();
         fetchDailyLog();
     }, [fetchPantry, fetchShoppingList, fetchDailyLog]);
+
+    const showToast = (message: string) => {
+        setToastMessage(message);
+        setTimeout(() => setToastMessage(null), 3000);
+    };
 
     // Calculate remaining calories
     const meals = currentLog?.meals || { breakfast: [], lunch: [], dinner: [], snack: [] };
@@ -139,8 +145,7 @@ const KitchenAssistant = () => {
                     if (pantryItem.quantity <= reqQty) {
                         await deleteItem(pantryItem._id);
                     } else {
-                        // In a real app we'd update quantity, but for MVP we delete if it runs out
-                        // We will skip full update logic here to save time, assuming item is mostly used up
+                        await updateItem(pantryItem._id, { quantity: pantryItem.quantity - reqQty });
                     }
                 }
             }
@@ -158,7 +163,7 @@ const KitchenAssistant = () => {
         });
 
         setSelectedRecipe(null);
-        alert(`Awesome! You cooked ${recipe.title}. Ingredients deducted and macros logged!`);
+        showToast(`Awesome! You cooked ${recipe.title}. Ingredients deducted and macros logged!`);
     };
 
     const handleAddMissingToShopping = (missingItems: {name: string, qty: number, unit: string, category: string}[]) => {
@@ -169,7 +174,7 @@ const KitchenAssistant = () => {
             category: item.category
         }));
         addShoppingItems(mappedItems);
-        alert(`Added ${missingItems.length} items to your shopping list.`);
+        showToast(`Added ${missingItems.length} items to your shopping list.`);
     };
 
     // Group pantry items
@@ -248,6 +253,12 @@ const KitchenAssistant = () => {
                                 Generate Meals
                             </button>
                         </div>
+                        
+                        {aiError && (
+                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl flex items-center gap-3">
+                                <span>⚠️ {aiError}</span>
+                            </div>
+                        )}
 
                         {pantryItems.length === 0 && !isGenerating && suggestions.length === 0 && (
                             <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -398,6 +409,15 @@ const KitchenAssistant = () => {
                     onCook={() => handleCook(selectedRecipe)}
                     onAddMissing={handleAddMissingToShopping}
                 />
+            )}
+
+            {toastMessage && (
+                <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
+                    <div className="bg-primary text-dark-900 font-bold px-6 py-3 rounded-full shadow-[0_0_20px_rgba(204,255,0,0.4)] flex items-center gap-2">
+                        <CheckSquare className="w-5 h-5" />
+                        {toastMessage}
+                    </div>
+                </div>
             )}
         </div>
     );

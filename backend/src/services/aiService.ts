@@ -9,11 +9,11 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey || '');
-// gemini-2.5-flash is used for chat (reasoning). gemini-2.0-flash is used for
+// gemini-2.5-flash is used for chat (reasoning). gemini-2.5-flash-lite is used for
 // structured JSON tasks (food analysis, meal suggestions) to avoid hitting the
 // 64k thinking-token output limit that causes 500 errors on gemini-2.5-flash.
 const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-const fastModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+const fastModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
 // Helper to retry API calls on 503 Service Unavailable or 429 Too Many Requests
 const retryOperation = async <T>(operation: () => Promise<T>, maxRetries: number = 3): Promise<T> => {
@@ -65,6 +65,9 @@ export const chatWithCoach = async (message: string, history: {role: 'user' | 'm
         return result.response.text();
     } catch (error: any) {
         console.error("Chat Error:", error);
+        if (error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('quota')) {
+            return `[API Quota Exceeded] I'm currently out of API requests! 😔 However, based on your context (Goal: ${context.match(/Goal: (.*?) kcal/)?.[1] || 'unknown'} calories), I'd advise keeping up with your macros. Please try again later when my rate limits reset!`;
+        }
         return `⚠️ Coach Nova encountered an error: ${error.message}`;
     }
 };
@@ -192,6 +195,23 @@ Rules:
         return Array.isArray(suggestions) ? suggestions : [];
     } catch (error: any) {
         console.error("Meal Suggestion Error:", error.message);
+        if (error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('quota')) {
+            console.log("Falling back to mock meal suggestion due to 429 Quota Exceeded.");
+            return [
+                {
+                    title: "[Quota Exceeded Mock] Chicken & Rice",
+                    ingredientMatchPct: 100,
+                    ingredients: [
+                        { name: "Chicken", qty: "200", unit: "g", available: true },
+                        { name: "Rice", qty: "100", unit: "g", available: true }
+                    ],
+                    missingIngredients: [],
+                    steps: ["The AI API quota was exceeded.", "This is a mock meal so you can test the Cook functionality!"],
+                    macros: { calories: 500, protein: 45, carbs: 40, fat: 5 },
+                    videoSearchQuery: "chicken and rice recipe"
+                }
+            ];
+        }
         throw new Error(error.message || "Failed to generate meal suggestions.");
     }
 };
