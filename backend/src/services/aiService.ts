@@ -1,59 +1,88 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) {
-    console.error("WARNING: GEMINI_API_KEY is missing in environment variables.");
+const HF_TOKEN = process.env.HF_TOKEN;
+const MODEL_NAME = process.env.HF_MODEL_NAME || "mistralai/Mistral-7B-Instruct-v0.3";
+
+if (!HF_TOKEN) {
+    console.error("WARNING: HF_TOKEN is missing in environment variables.");
+    console.error("Get your token at: https://huggingface.co/settings/tokens");
 }
 
-const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
-const model = genAI ? genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }) : null;
+// Helper to make requests to HuggingFace Inference API
+async function hfChatCompletion(messages: {role: string; content: string}[], stream: boolean = false): Promise<any> {
+    if (!HF_TOKEN) {
+        throw new Error("HF_TOKEN not configured");
+    }
+
+    const response = await fetch(
+        `https://api-inference.huggingface.co/models/${MODEL_NAME}`,
+        {
+            headers: {
+                "Authorization": `Bearer ${HF_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            method: "POST",
+            body: JSON.stringify({
+                inputs: messages,
+                parameters: {
+                    max_new_tokens: 256,
+                    temperature: 0.7,
+                    top_p: 0.9,
+                    return_full_text: false,
+                },
+                stream: stream,
+            }),
+        }
+    );
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`HuggingFace API error: ${response.status} - ${error}`);
+    }
+
+    return response;
+}
 
 export const chatWithCoach = async (message: string, history: {role: 'user' | 'model', parts: {text: string}[]}[] = [], context: string = "") => {
     try {
         const systemPrompt = `You are Coach Nova, an elite, hyper-intelligent fitness AI. You speak in a highly motivating, crisp, premium Gen-Z aesthetic tone. You provide precise, actionable fitness advice. Be concise.\n\nUser Context:\n${context}`;
         
-        const validHistory: any[] = [
-            { role: "user", parts: [{ text: systemPrompt }] },
-            { role: "model", parts: [{ text: "Understood. I am Coach Nova. Let's sculpt." }] }
+        // Build messages array for HuggingFace
+        const messages: {role: string; content: string}[] = [
+            { role: "system", content: systemPrompt }
         ];
 
-        let lastRole = "model";
+        // Add history (convert from Gemini format to simple messages)
         for (const msg of history) {
-            if (msg.role === lastRole) {
-                validHistory.push({ 
-                    role: msg.role === 'model' ? 'user' : 'model', 
-                    parts: [{ text: "..." }] 
-                });
-            }
-            validHistory.push(msg);
-            lastRole = msg.role;
+            messages.push({
+                role: msg.role === 'model' ? 'assistant' : msg.role,
+                content: msg.parts[0]?.text || ''
+            });
         }
 
-        if (!model) {
+        // Add current message
+        messages.push({ role: "user", content: message });
+
+        if (!HF_TOKEN) {
             // Mock response if API key is missing
             return `[MOCK AI] I see your context! You weigh ${context.match(/Weight: (.*?)kg/)?.[1] || 'unknown'}kg and your goal is ${context.match(/Goal: (.*?) kcal/)?.[1] || 'unknown'} calories. Since no API key is provided, I'm running in local test mode! You said: "${message}"`;
         }
 
-        const chat = model.startChat({
-            history: validHistory,
-            generationConfig: {
-                maxOutputTokens: 250,
-            },
-        });
-
-        const result = await chat.sendMessage(message);
-        return result.response.text();
+        const response = await hfChatCompletion(messages, false);
+        
+        // Handle streaming response (single chunk for non-streaming)
+        const data = await response.json();
+        
+        // Mistral Instruct format returns generated_text
+        if (data.generated_text) {
+            return data.generated_text;
+        }
+        
+        // Fallback: try to extract from different response formats
+        return data[0]?.generated_text || data.generated_text || "I couldn't generate a response. Please try again.";
     } catch (error: any) {
         console.error("Chat Error:", error);
-        // Catch suspended/invalid API key gracefully
-        if (error.status === 403 || (error.message && error.message.includes('CONSUMER_SUSPENDED'))) {
-            return "⚠️ Coach Nova is temporarily offline. The AI API key is suspended. Please update `GEMINI_API_KEY` in your backend `.env` file with a valid key from [aistudio.google.com](https://aistudio.google.com/app/apikey) and restart the server.";
-        }
-        if (error.status === 429) {
-            return "⚠️ Coach Nova hit the rate limit. Please wait a moment and try again!";
-        }
         return `⚠️ Coach Nova encountered an error: ${error.message}`;
     }
 };
@@ -67,22 +96,22 @@ const stripJsonMarkdown = (text: string): string => {
 };
 
 export const analyzeFoodMacro = async (foodName: string) => {
-    try {
-        const prompt = `
-            Analyze the following food item or meal: "${foodName}".
-            Provide a realistic estimation of its macronutrients.
-            You MUST return the output strictly in this JSON format:
-            {
-                "name": "formatted name of the food",
-                "cals": number (total calories),
-                "pro": number (protein in grams),
-                "carb": number (carbs in grams),
-                "fat": number (fat in grams)
-            }
-            Do not include any markdown formatting, backticks, or extra text. Just the JSON object.
-        `;
+    const prompt = `
+Analyze the following food item or meal: "${foodName}".
+Provide a realistic estimation of its macronutrients.
+You MUST return the output strictly in this JSON format:
+{
+    "name": "formatted name of the food",
+    "cals": number (total calories),
+    "pro": number (protein in grams),
+    "carb": number (carbs in grams),
+    "fat": number (fat in grams)
+}
+Do not include any markdown formatting, backticks, or extra text. Just the JSON object.
+    `.trim();
 
-        if (!model) {
+    try {
+        if (!HF_TOKEN) {
             return {
                 name: foodName,
                 cals: 350,
@@ -92,10 +121,18 @@ export const analyzeFoodMacro = async (foodName: string) => {
             };
         }
 
-        const result = await model.generateContent(prompt);
-        const parsedData = JSON.parse(stripJsonMarkdown(result.response.text()));
+        const messages = [
+            { role: "system", content: "You are a nutrition analysis assistant. Return only valid JSON." },
+            { role: "user", content: prompt }
+        ];
+
+        const response = await hfChatCompletion(messages, false);
+        const data = await response.json();
+        
+        const text = data.generated_text || data[0]?.generated_text || "";
+        const parsedData = JSON.parse(stripJsonMarkdown(text));
         return parsedData;
-    } catch (error) {
+    } catch (error: any) {
         console.error("Analysis Error:", error);
         throw new Error("Failed to analyze food.");
     }
@@ -161,10 +198,10 @@ Rules:
 - macros: realistic per-serving estimates
 - Keep calories within the remaining budget where possible
 - Return exactly 3 meal suggestions
-`;
+`.trim();
 
     try {
-        if (!model) {
+        if (!HF_TOKEN) {
             return [
                 {
                     title: "[MOCK] Chicken & Broccoli",
@@ -178,10 +215,18 @@ Rules:
             ];
         }
 
-        const result = await model.generateContent(prompt);
-        const suggestions: MealSuggestion[] = JSON.parse(stripJsonMarkdown(result.response.text()));
+        const messages = [
+            { role: "system", content: "You are a professional chef and nutritionist. Return only valid JSON array." },
+            { role: "user", content: prompt }
+        ];
+
+        const response = await hfChatCompletion(messages, false);
+        const data = await response.json();
+        
+        const text = data.generated_text || data[0]?.generated_text || "";
+        const suggestions: MealSuggestion[] = JSON.parse(stripJsonMarkdown(text));
         return Array.isArray(suggestions) ? suggestions : [];
-    } catch (error) {
+    } catch (error: any) {
         console.error("Meal Suggestion Error:", error);
         throw new Error("Failed to generate meal suggestions.");
     }

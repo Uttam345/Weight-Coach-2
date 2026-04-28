@@ -52,11 +52,15 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
         });
 
         if (user) {
+            const token = jwt.sign({ id: user._id.toString() }, process.env.JWT_SECRET || 'fallback_secret', {
+                expiresIn: '30d',
+            });
             generateTokenAndSetCookie(res, user._id.toString());
             res.status(201).json({
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                token, // Return token in response for frontend storage
             });
         } else {
             res.status(400).json({ message: 'Invalid user data' });
@@ -77,11 +81,15 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
         const user = await User.findOne({ email });
 
         if (user && (await bcrypt.compare(password, user.password))) {
+            const token = jwt.sign({ id: user._id.toString() }, process.env.JWT_SECRET || 'fallback_secret', {
+                expiresIn: '30d',
+            });
             generateTokenAndSetCookie(res, user._id.toString());
             res.json({
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                token, // Return token in response for frontend storage
             });
         } else {
             res.status(401).json({ message: 'Invalid email or password' });
